@@ -1,0 +1,4 @@
+gtts
+moviepy 
+requests
+google-generativeai==0.3.1
