@@ -31,16 +31,39 @@ def generate_curiosity():
 #TODO Update this function to fetch a good image (currently it uses a random image from Unsplash)
 #TODO Use the unsplash API to fetch a relevant image based on the curiosity and make the proper authentication
 def download_image():
-    url = "https://source.unsplash.com/random/720x1280"
-    img_path = "content/imagem.jpg"
-    response = requests.get(url)
-    # Check if the response is an image
-    if response.status_code == 200 and response.headers.get('Content-Type', '').startswith('image/'):
-        with open(img_path, "wb") as f:
-            f.write(response.content)
-        return img_path
+    # Get Unsplash API key from environment
+    unsplash_access_key = os.environ.get("UNSPLASH_ACCESS_KEY")
+    if not unsplash_access_key:
+        raise Exception("UNSPLASH_ACCESS_KEY not set in environment variables.")
+
+    # Use the curiosity text as a search query
+    query = generate_curiosity()
+    search_url = "https://api.unsplash.com/search/photos"
+    params = {
+        "query": query,
+        "orientation": "portrait",
+        "per_page": 1
+    }
+    headers = {
+        "Authorization": f"Client-ID {unsplash_access_key}"
+    }
+    response = requests.get(search_url, params=params, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        if data["results"]:
+            image_url = data["results"][0]["urls"]["regular"]
+            img_path = "content/imagem.jpg"
+            img_response = requests.get(image_url)
+            if img_response.status_code == 200 and img_response.headers.get('Content-Type', '').startswith('image/'):
+                with open(img_path, "wb") as f:
+                    f.write(img_response.content)
+                return img_path
+            else:
+                raise Exception(f"Failed to download image from Unsplash. Status: {img_response.status_code}, Content-Type: {img_response.headers.get('Content-Type')}")
+        else:
+            raise Exception("No images found for the given query on Unsplash.")
     else:
-        raise Exception(f"Failed to download a valid image. Status: {response.status_code}, Content-Type: {response.headers.get('Content-Type')}")
+        raise Exception(f"Failed to search Unsplash API. Status: {response.status_code}, Response: {response.text}")
 
 # 3. Generate audio with gTTS
 def gerar_audio(texto):
@@ -52,8 +75,8 @@ def gerar_audio(texto):
 # 4. Build video with image + audio
 def create_video(imagem_path, audio_path, texto):
     audio = AudioFileClip(audio_path)
-    imagem = ImageClip(imagem_path).set_duration(audio.duration).resize(height=1280)
-    imagem = imagem.set_position("center").set_audio(audio)
+    imagem = ImageClip(imagem_path).with_duration(audio.duration).resized(height=1280)
+    imagem = imagem.with_position("center").with_audio(audio)
 
     video = CompositeVideoClip([imagem])
     video_path = "content/short.mp4"
