@@ -20,15 +20,18 @@ def create_video(image_path, audio_path, text):
     duration_per_sentence = audio.duration / n if n > 0 else audio.duration
 
     subtitle_clips = []
+
     for i, sentence in enumerate(sentences):
         start = i * duration_per_sentence
         end = start + duration_per_sentence
         subtitle = TextClip(
             text=sentence,
             font=font_path,
-            font_size=20,
-            color='black'
-        ).with_position('center').with_start(start).with_duration(duration_per_sentence)
+            font_size=30,
+            color='black',
+            method='caption',
+            size=(image.w - 80, None)  # leave some margin on sides
+        ).with_position(('center')).with_start(start).with_duration(duration_per_sentence)
         subtitle_clips.append(subtitle)
 
     video = CompositeVideoClip([image] + subtitle_clips)
