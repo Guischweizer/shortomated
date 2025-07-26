@@ -84,6 +84,7 @@ def generate_audio(text):
     tts.save(audio_path)
     return audio_path
 
+# 3.1 Generate audio with ElevenLabs
 def generate_audio_with_elevenlabs(text):
     elevenlabs_api_key = os.environ.get("ELEVEN_LAB_API_KEY")
     if not elevenlabs_api_key:
@@ -123,8 +124,17 @@ print(f"Fun Fact: {fun_fact}")
 
 # Generate image query and download image
 image = download_image()(fun_fact)
-# Generate audio
-audio = generate_audio_with_elevenlabs(fun_fact)
+print(f"✅ Image downloaded: {image}")
+# Generate audio with ElevenLabs if key is present, otherwise fallback to gTTS
+elevenlabs_api_key = os.environ.get("ELEVEN_LAB_API_KEY")
+if elevenlabs_api_key:
+    audio = generate_audio_with_elevenlabs(fun_fact)
+    print(f"✅ Audio generated with ElevenLabs: {audio}")
+else:
+    print("[INFO] ELEVEN_LAB_API_KEY not found, using gTTS for audio.")
+    audio = generate_audio(fun_fact)
+    print(f"✅ Audio generated with gTTS: {audio}")
+
 video = create_video(image, audio, fun_fact)
 
 print(f"✅ Video generated: {video}")
